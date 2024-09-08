@@ -1,70 +1,215 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, FlatList, Text, View, TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
+import { Searchbar, Avatar, IconButton } from 'react-native-paper';
+import * as Contacts from 'expo-contacts';
+import * as Linking from 'expo-linking';
+import DialerPad from '../../components/DailerPad';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function App() {
+  const [contacts, setContacts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredContacts, setFilteredContacts] = useState([]);
+  const [dialerVisible, setDialerVisible] = useState(false);
+  const [dialedNumber, setDialedNumber] = useState('');
 
-export default function HomeScreen() {
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { status } = await Contacts.requestPermissionsAsync();
+      if (status === 'granted') {
+        const { data } = await Contacts.getContactsAsync({
+          fields: [Contacts.Fields.PhoneNumbers],
+        });
+        console.log(data); // Log the data
+        if (data && data.length > 0) {
+          setContacts(data);
+          setFilteredContacts(data);
+        }
+      } else {
+        console.log('Permission to access contacts was denied');
+      }
+    };
+
+    fetchContacts();
+  }, []);
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query) {
+      const filtered = contacts.filter((contact) =>
+        contact.name?.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredContacts(filtered);
+    } else {
+      setFilteredContacts(contacts);
+    }
+  };
+
+  const makeCall = (phoneNumber) => {
+    if (phoneNumber) {
+      Linking.openURL(`tel:${phoneNumber}`);
+    }
+  };
+
+  const renderContact = ({ item }) => (
+    <TouchableOpacity
+      style={styles.contactItem}
+      onPress={() => item.phoneNumbers?.length > 0 && makeCall(item.phoneNumbers[0].number)}
+    >
+      <Avatar.Text size={40} label={item.name?.charAt(0)} style={styles.avatar} />
+      <View style={styles.contactDetails}>
+        <Text style={styles.contactName}>{item.name}</Text>
+        {item.phoneNumbers?.length > 0 && (
+          <Text style={styles.contactNumber}>{item.phoneNumbers[0].number}</Text>
+        )}
+      </View>
+      <IconButton icon="phone" onPress={() => item.phoneNumbers?.length > 0 && makeCall(item.phoneNumbers[0].number)} />
+    </TouchableOpacity>
+  );
+
+  const handleDialerVisibility = () => {
+    setDialerVisible(!dialerVisible);
+    Keyboard.dismiss(); // Hide the keyboard when toggling the dialer
+  };
+
+  const handleDial = (number) => {
+    setDialedNumber(prev => prev + number);
+  };
+
+  const handleBackspace = () => {
+    setDialedNumber(prev => prev.slice(0, -1));
+  };
+
+  const handleCall = () => {
+    if (dialedNumber) {
+      makeCall(dialedNumber);
+      setDialedNumber(''); // Clear the number after calling
+      handleDialerVisibility(); // Hide the dialer pad after calling
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.contactsContainer}>
+        <Searchbar
+          placeholder="Search Contacts"
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchbar}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <FlatList
+          data={filteredContacts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderContact}
+          ListEmptyComponent={<Text style={styles.noContactsText}>No Contacts Found</Text>}
+        />
+      </View>
+      <View style={[styles.dialerContainer, { bottom: dialerVisible ? 0 : '-50%' }]}>
+        <DialerPad 
+          onDial={handleDial}
+          onBackspace={handleBackspace}
+          onCall={handleCall}
+          enteredNumber={dialedNumber}
+        />
+        <TouchableOpacity style={styles.toggleDialerButton} onPress={handleDialerVisibility}>
+          <Text style={styles.toggleDialerButtonText}>{dialerVisible ? 'Hide Dialer' : 'Show Dialer'}</Text>
+        </TouchableOpacity>
+      </View>
+      {!dialerVisible && (
+        <TouchableOpacity style={styles.showDialerButton} onPress={handleDialerVisibility}>
+          <Text style={styles.showDialerButtonText}>Show Dialer</Text>
+        </TouchableOpacity>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#121212', // Dark background color
+  },
+  contactsContainer: {
+    flex: 1,
+    paddingBottom: 60, // Ensure space for dialer pad
+  },
+  searchbar: {
+    margin: 10,
+    marginTop: 20, // Added top margin to bring the search bar down
+    borderRadius: 20,
+    backgroundColor: '#333', // Darker searchbar background
+  },
+  contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444', // Darker border color
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  contactDetails: {
+    flex: 1,
+    marginLeft: 15,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  contactName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff', // White text color
+  },
+  contactNumber: {
+    color: '#bbb', // Light gray text color
+  },
+  avatar: {
+    backgroundColor: '#6200ea', // Accent color
+  },
+  noContactsText: {
+    textAlign: 'center',
+    color: '#bbb', // Light gray text color
+    marginTop: 20,
+  },
+  dialerContainer: {
     position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height: '50%',
+    backgroundColor: '#1f1f1f', // Darker dialer background
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    zIndex: 1,
+    transition: 'bottom 0.3s ease-in-out', // Smooth transition
+  },
+  toggleDialerButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#6200ea',
+    padding: 10,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  toggleDialerButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  showDialerButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#6200ea',
+    padding: 15,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  showDialerButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
