@@ -3,7 +3,7 @@ import { SafeAreaView, FlatList, Text, View, TouchableOpacity, StyleSheet, Keybo
 import { Searchbar, Avatar, IconButton } from 'react-native-paper';
 import * as Contacts from 'expo-contacts';
 import * as Linking from 'expo-linking';
-import * as Updates from 'expo-updates';  // Import Updates module
+import * as Updates from 'expo-updates'; 
 import DialerPad from '../../components/DailerPad';
 
 export default function App() {
@@ -14,12 +14,12 @@ export default function App() {
   const [dialedNumber, setDialedNumber] = useState('');
 
   useEffect(() => {
+    // Check for updates when the component mounts
     const checkForUpdates = async () => {
       try {
         const update = await Updates.checkForUpdateAsync();
         if (update.isAvailable) {
           await Updates.fetchUpdateAsync();
-          // Notify the user about the update and reload the app
           Alert.alert(
             'Update Available',
             'A new update is available. The app will restart to apply the update.',
@@ -46,7 +46,16 @@ export default function App() {
     };
 
     checkForUpdates();
-  }, []); // Run once when the component mounts
+
+    // Hide the dialer when the keyboard appears
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setDialerVisible(false);
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -55,7 +64,6 @@ export default function App() {
         const { data } = await Contacts.getContactsAsync({
           fields: [Contacts.Fields.PhoneNumbers],
         });
-        console.log(data); // Log the data
         if (data && data.length > 0) {
           setContacts(data);
           setFilteredContacts(data);
@@ -132,7 +140,7 @@ export default function App() {
             onChangeText={handleSearch}
             value={searchQuery}
             style={styles.searchbar}
-            onFocus={handleDialerVisibility} // Hide the dialer when the search bar is focused
+            onFocus={() => setDialerVisible(false)} // Hide the dialer when the search bar is focused
           />
           <TouchableOpacity style={styles.toggleDialerButton} onPress={handleDialerVisibility}>
             <Text style={styles.toggleDialerButtonText}>{dialerVisible ? 'Hide Dialer' : 'Show Dialer'}</Text>
