@@ -5,6 +5,8 @@ import * as Contacts from 'expo-contacts';
 import * as Linking from 'expo-linking';
 import * as Updates from 'expo-updates'; 
 import DialerPad from '../../components/DailerPad';
+import * as Font from 'expo-font';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 export default function App() {
   const [contacts, setContacts] = useState([]);
@@ -12,6 +14,18 @@ export default function App() {
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [dialerVisible, setDialerVisible] = useState(false);
   const [dialedNumber, setDialedNumber] = useState('');
+  const [fontsLoaded, setFontsLoaded] = useState(false); // Add a state for font loading
+
+  useEffect(() => {
+    const loadFonts = async () => {
+      await Font.loadAsync({
+        'LexendDeca': require('../../assets/fonts/LexendDeca.ttf'),
+      });
+      setFontsLoaded(true);
+    };
+
+    loadFonts();
+  }, []);
 
   useEffect(() => {
     // Check for updates when the component mounts
@@ -143,7 +157,7 @@ export default function App() {
             onFocus={() => setDialerVisible(false)} // Hide the dialer when the search bar is focused
           />
           <TouchableOpacity style={styles.toggleDialerButton} onPress={handleDialerVisibility}>
-            <Text style={styles.toggleDialerButtonText}>{dialerVisible ? 'Hide Dialer' : 'Show Dialer'}</Text>
+            <Text style={styles.toggleDialerButtonText}>{dialerVisible ? <MaterialCommunityIcons name="dialpad" size={24} color="black" /> : <MaterialCommunityIcons name="dialpad" size={24} color="black" />}</Text>
           </TouchableOpacity>
         </View>
         <FlatList
@@ -153,7 +167,7 @@ export default function App() {
           ListEmptyComponent={<Text style={styles.noContactsText}>No Contacts Found</Text>}
         />
       </View>
-      <View style={[styles.dialerContainer, { bottom: dialerVisible ? 0 : '-50%' }]}>
+      <View style={[styles.dialerContainer, { bottom: dialerVisible ? 0 : '-60%' }]}>
         <DialerPad 
           onDial={handleDial}
           onBackspace={handleBackspace}
@@ -168,7 +182,9 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: 'white',
+    color:'black',
+    
   },
   contactsContainer: {
     flex: 1,
@@ -180,28 +196,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 10,
     marginTop: 20,
+    fontFamily :'LexendDeca'
   },
   searchbar: {
     flex: 1,
     borderRadius: 20,
-    backgroundColor: '#333',
+    backgroundColor: 'white',
+    fontFamily :'LexendDeca'
   },
   toggleDialerButton: {
     marginLeft: 10,
-    backgroundColor: '#6200ea',
+    backgroundColor: '#00C3F2',
     padding: 10,
-    borderRadius: 20,
+    borderRadius: 50,
+    fontFamily :'LexendDeca'
   },
   toggleDialerButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: 'black',
+    fontFamily :'LexendDeca'
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#444',
+    borderBottomColor: 'white',
   },
   contactDetails: {
     flex: 1,
@@ -209,14 +228,14 @@ const styles = StyleSheet.create({
   },
   contactName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    color: 'black',
+    fontFamily: 'LexendDeca'
   },
   contactNumber: {
     color: '#bbb',
   },
   avatar: {
-    backgroundColor: '#6200ea',
+    backgroundColor: '#00C3F2',
   },
   noContactsText: {
     textAlign: 'center',
@@ -231,10 +250,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f1f1f',
     justifyContent: 'center',
     alignItems: 'center',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  
     zIndex: 1,
   },
 });
 
-// hello
+

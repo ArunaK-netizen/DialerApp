@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import Communications from 'react-native-communications'; // Import the library
+import Communications from 'react-native-communications'; 
+import Entypo from '@expo/vector-icons/Entypo';
 
 const { width } = Dimensions.get('window');
 
@@ -26,7 +27,12 @@ const DialerPad = ({ onCall, onHide }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.input}>{input}</Text>
+      <View style={styles.inputBox}>
+        <Text style={styles.input}>{input}</Text>
+        <TouchableOpacity style={styles.backspaceButton} onPress={handleBackspace}>
+          <Text style={styles.backspaceText}>⌫</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.padContainer}>
         <View style={styles.row}>
           {[1, 2, 3].map((num) => (
@@ -62,11 +68,8 @@ const DialerPad = ({ onCall, onHide }) => {
         </View>
       </View>
       <View style={styles.actionContainer}>
-        <TouchableOpacity style={styles.backspaceButton} onPress={handleBackspace}>
-          <Text style={styles.backspaceText}>⌫</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.callButton} onPress={handleCall}>
-          <Text style={styles.callButtonText}>Call</Text>
+          <Entypo name="phone" size={24} color="white" />
         </TouchableOpacity>
       </View>
     </View>
@@ -77,11 +80,42 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
+    
+  },
+  inputBox: {
+    width: width * 1,
+    height: 80,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1f1f1f',
+   
+    marginVertical: 20,
+
+    position: 'relative',
+    paddingHorizontal: 10,
+    overflow: 'hidden', // Ensure content does not overflow
   },
   input: {
     fontSize: 40,
+    color: 'white',
+    flex: 1,
+    textAlign: 'center', 
+    verticalAlign: 'center',// Center the text
+    fontFamily: 'LexendDeca',
+    height: '100%', // Ensure it fills the height
+    overflow: 'hidden', // Prevent text from overflowing
+    flexShrink: 1, // Ensure text shrinks if needed
+  },
+  backspaceButton: {
+    position: 'absolute',
+    right: 10,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backspaceText: {
+    fontSize: 24,
     color: '#fff',
-    marginBottom: 20,
   },
   padContainer: {
     width: width * 0.9,
@@ -89,51 +123,40 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 10,
   },
   button: {
-    width: '30%',
-    height: 60,
-    backgroundColor: '#444',
+    width: '15%',
+    height: 80,
+    backgroundColor: '#333333',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 200,
+    marginHorizontal: 10,
+    marginLeft: 30,
+    marginRight: 30,
   },
   buttonText: {
-    fontSize: 24,
-    color: '#fff',
+    fontSize: 30,
+    color: 'white',
+    fontFamily: 'LexendDeca',
   },
   actionContainer: {
     width: width * 0.9,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginTop: 20,
   },
-  backspaceButton: {
-    width: '45%',
-    height: 60,
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  backspaceText: {
-    fontSize: 24,
-    color: '#fff',
-  },
   callButton: {
-    width: '45%',
-    height: 60,
-    backgroundColor: '#6200ea',
+    width: '15%',
+    height: 80,
+    backgroundColor: '#00c3f2',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
-  },
-  callButtonText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
+    borderRadius: 200,
+    marginBottom: 100,
   },
 });
 
