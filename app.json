@@ -45,6 +45,13 @@
       "eas": {
         "projectId": "9eb052cf-43fc-4de1-ad70-4eb82c8ea57a"
       }
+    },
+    "owner": "safedail",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9eb052cf-43fc-4de1-ad70-4eb82c8ea57a"
     }
   }
 }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, FlatList, Text, View, TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
+import { SafeAreaView, FlatList, Text, View, TouchableOpacity, StyleSheet, Keyboard, Alert } from 'react-native';
 import { Searchbar, Avatar, IconButton } from 'react-native-paper';
 import * as Contacts from 'expo-contacts';
 import * as Linking from 'expo-linking';
+import * as Updates from 'expo-updates';  // Import Updates module
 import DialerPad from '../../components/DailerPad';
 
 export default function App() {
@@ -11,6 +12,41 @@ export default function App() {
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [dialerVisible, setDialerVisible] = useState(false);
   const [dialedNumber, setDialedNumber] = useState('');
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          // Notify the user about the update and reload the app
+          Alert.alert(
+            'Update Available',
+            'A new update is available. The app will restart to apply the update.',
+            [
+              {
+                text: 'OK',
+                onPress: async () => {
+                  try {
+                    await Updates.reloadAsync();
+                  } catch (reloadError) {
+                    Alert.alert('Error', 'Failed to reload the app. Please try again later.');
+                    console.error('Error reloading the app:', reloadError);
+                  }
+                },
+              },
+            ],
+            { cancelable: false }
+          );
+        }
+      } catch (error) {
+        Alert.alert('Update Error', 'Failed to check for updates. Please try again later.');
+        console.error('Error checking for updates:', error);
+      }
+    };
+
+    checkForUpdates();
+  }, []); // Run once when the component mounts
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -72,11 +108,11 @@ export default function App() {
   };
 
   const handleDial = (number) => {
-    setDialedNumber(prev => prev + number);
+    setDialedNumber((prev) => prev + number);
   };
 
   const handleBackspace = () => {
-    setDialedNumber(prev => prev.slice(0, -1));
+    setDialedNumber((prev) => prev.slice(0, -1));
   };
 
   const handleCall = () => {
@@ -90,12 +126,18 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.contactsContainer}>
-        <Searchbar
-          placeholder="Search Contacts"
-          onChangeText={handleSearch}
-          value={searchQuery}
-          style={styles.searchbar}
-        />
+        <View style={styles.searchContainer}>
+          <Searchbar
+            placeholder="Search Contacts"
+            onChangeText={handleSearch}
+            value={searchQuery}
+            style={styles.searchbar}
+            onFocus={handleDialerVisibility} // Hide the dialer when the search bar is focused
+          />
+          <TouchableOpacity style={styles.toggleDialerButton} onPress={handleDialerVisibility}>
+            <Text style={styles.toggleDialerButtonText}>{dialerVisible ? 'Hide Dialer' : 'Show Dialer'}</Text>
+          </TouchableOpacity>
+        </View>
         <FlatList
           data={filteredContacts}
           keyExtractor={(item) => item.id}
@@ -110,15 +152,7 @@ export default function App() {
           onCall={handleCall}
           enteredNumber={dialedNumber}
         />
-        <TouchableOpacity style={styles.toggleDialerButton} onPress={handleDialerVisibility}>
-          <Text style={styles.toggleDialerButtonText}>{dialerVisible ? 'Hide Dialer' : 'Show Dialer'}</Text>
-        </TouchableOpacity>
       </View>
-      {!dialerVisible && (
-        <TouchableOpacity style={styles.showDialerButton} onPress={handleDialerVisibility}>
-          <Text style={styles.showDialerButtonText}>Show Dialer</Text>
-        </TouchableOpacity>
-      )}
     </SafeAreaView>
   );
 }
@@ -126,24 +160,40 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212', // Dark background color
+    backgroundColor: '#121212',
   },
   contactsContainer: {
     flex: 1,
-    paddingBottom: 60, // Ensure space for dialer pad
+    paddingBottom: 60,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginTop: 20,
   },
   searchbar: {
-    margin: 10,
-    marginTop: 20, // Added top margin to bring the search bar down
+    flex: 1,
     borderRadius: 20,
-    backgroundColor: '#333', // Darker searchbar background
+    backgroundColor: '#333',
+  },
+  toggleDialerButton: {
+    marginLeft: 10,
+    backgroundColor: '#6200ea',
+    padding: 10,
+    borderRadius: 20,
+  },
+  toggleDialerButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#444', // Darker border color
+    borderBottomColor: '#444',
   },
   contactDetails: {
     flex: 1,
@@ -152,17 +202,17 @@ const styles = StyleSheet.create({
   contactName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff', // White text color
+    color: '#fff',
   },
   contactNumber: {
-    color: '#bbb', // Light gray text color
+    color: '#bbb',
   },
   avatar: {
-    backgroundColor: '#6200ea', // Accent color
+    backgroundColor: '#6200ea',
   },
   noContactsText: {
     textAlign: 'center',
-    color: '#bbb', // Light gray text color
+    color: '#bbb',
     marginTop: 20,
   },
   dialerContainer: {
@@ -170,46 +220,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     height: '50%',
-    backgroundColor: '#1f1f1f', // Darker dialer background
+    backgroundColor: '#1f1f1f',
     justifyContent: 'center',
     alignItems: 'center',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     zIndex: 1,
-    transition: 'bottom 0.3s ease-in-out', // Smooth transition
-  },
-  toggleDialerButton: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: '#6200ea',
-    padding: 10,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  toggleDialerButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  showDialerButton: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: '#6200ea',
-    padding: 15,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  showDialerButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });
